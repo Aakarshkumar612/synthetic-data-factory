@@ -1,15 +1,40 @@
 import os
+import streamlit as st
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
 
+# 1. Load local .env file (if it exists)
 load_dotenv()
-GEMINI_KEY = os.getenv("GEMINI_API_KEY")
+
+def get_api_key():
+    """
+    Safely retrieves the API key from Environment or Streamlit Secrets.
+    This prevents StreamlitSecretNotFoundError.
+    """
+    # First, try standard environment variables (Local dev)
+    key = os.getenv("GEMINI_API_KEY")
+    
+    # If not found, try Streamlit secrets (Cloud dev)
+    if not key:
+        try:
+            # We use .get() to avoid the crash if the secret is missing
+            key = st.secrets.get("GEMINI_API_KEY")
+        except Exception:
+            key = None
+            
+    return key
+
+# Initialize the key
+GEMINI_KEY = get_api_key()
 
 def generate_data(topic: str, count: int = 5) -> str:
     """Generates synthetic data using the verified Gemini 2.5 Flash model."""
     
-    # Pro Tip: Always use the 'v1' stable channel for Tier 1 reliability
+    if not GEMINI_KEY:
+        return "❌ Error: Gemini API Key not found. Please check your .env file or Streamlit Secrets."
+
+    # Using 'with' ensures the connection is closed properly
     with genai.Client(
         api_key=GEMINI_KEY,
         http_options=types.HttpOptions(api_version='v1')
@@ -26,15 +51,15 @@ def generate_data(topic: str, count: int = 5) -> str:
         """
         
         try:
-            # Using the model YOUR terminal confirmed: gemini-2.5-flash
+            # Verified model from your terminal health check
             response = client.models.generate_content(
                 model="gemini-2.5-flash",
                 contents=prompt
             )
             return response.text
         except Exception as e:
-            return f"API Error: {str(e)}"
+            return f"⚠️ API Error: {str(e)}"
 
 if __name__ == "__main__":
-    print("🚀 Factory Line: Using Verified Gemini 2.5 Flash...")
-    print(generate_data("SQL Window Functions", count=1))
+    print("🚀 Factory Line: Running Internal Health Check...")
+    print(generate_data("Python 3.12 Syntax", count=1))
