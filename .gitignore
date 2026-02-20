@@ -1,0 +1,11 @@
+**Crucial:** You must never push your `.env` file or your `venv`/`conda` environment to GitHub.
+
+**Create a file named `.gitignore` in your root folder:**
+```text
+.env
+__pycache__/
+*.pyc
+venv/
+.streamlit/
+data/*.csv
+data/*.jsonl
